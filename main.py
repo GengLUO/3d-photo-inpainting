@@ -26,7 +26,7 @@ from bilateral_filtering import sparse_bilateral_filtering
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', type=str, default='argument.yml',help='Configure of post processing')
 args = parser.parse_args()
-config = yaml.load(open(args.config, 'r'))
+config = yaml.safe_load(open(args.config, 'r'))
 if config['offscreen_rendering'] is True:
     vispy.use(app='egl')
 os.makedirs(config['mesh_folder'], exist_ok=True)
@@ -48,14 +48,14 @@ for idx in tqdm(range(len(sample_list))):
     print("Current Source ==> ", sample['src_pair_name'])
     mesh_fi = os.path.join(config['mesh_folder'], sample['src_pair_name'] +'.ply')
     image = imageio.imread(sample['ref_img_fi'])
-
+#Depth Map Extraction and Processing
     print(f"Running depth extraction at {time.time()}")
     if config['use_boostmonodepth'] is True:
         run_boostmonodepth(sample['ref_img_fi'], config['src_folder'], config['depth_folder'])
     elif config['require_midas'] is True:
         run_depth([sample['ref_img_fi']], config['src_folder'], config['depth_folder'],
                   config['MiDaS_model_ckpt'], MonoDepthNet, MiDaS_utils, target_w=640)
-
+#Image and Depth Resizing
     if 'npy' in config['depth_format']:
         config['output_h'], config['output_w'] = np.load(sample['depth_fi']).shape[:2]
     else:
@@ -72,6 +72,7 @@ for idx in tqdm(range(len(sample_list))):
     image = cv2.resize(image, (config['output_w'], config['output_h']), interpolation=cv2.INTER_AREA)
     depth = read_MiDaS_depth(sample['depth_fi'], 3.0, config['output_h'], config['output_w'])
     mean_loc_depth = depth[depth.shape[0]//2, depth.shape[1]//2]
+#Depth Filtering and 3D Model Preparation
     if not(config['load_ply'] is True and os.path.exists(mesh_fi)):
         vis_photos, vis_depths = sparse_bilateral_filtering(depth.copy(), image.copy(), config, num_iter=config['sparse_iter'], spdb=False)
         depth = vis_depths[-1]
@@ -122,6 +123,7 @@ for idx in tqdm(range(len(sample_list))):
         depth_edge_model = None
         depth_feat_model = None
         torch.cuda.empty_cache()
+#Optional Video Generation
     if config['save_ply'] is True or config['load_ply'] is True:
         verts, colors, faces, Height, Width, hFov, vFov = read_ply(mesh_fi)
     else:

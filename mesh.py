@@ -1,9 +1,9 @@
 import os
 import numpy as np
-try:
-    import cynetworkx as netx
-except ImportError:
-    import networkx as netx
+# try:
+  # import cynetworkx as netx
+# except ImportError:
+import networkx as netx
 import matplotlib.pyplot as plt
 from functools import partial
 from vispy import scene, io
@@ -265,7 +265,7 @@ def reassign_floating_island(mesh, info_on_pix, image, depth):
     _, label_lost_map = cv2.connectedComponents(lost_map.astype(np.uint8), connectivity=4)
     mask = np.zeros((H, W))
     mask[bord_up:bord_down, bord_left:bord_right] = 1
-    label_lost_map = (label_lost_map * mask).astype(np.int)
+    label_lost_map = (label_lost_map * mask).astype(int)
 
     for i in range(1, label_lost_map.max()+1):
         lost_xs, lost_ys = np.where(label_lost_map == i)
@@ -761,7 +761,7 @@ def remove_dangling(mesh, edge_ccs, edge_mesh, info_on_pix, image, depth, config
             info_on_pix[(hx, hy)][0]['depth'] = new_depth
             info_on_pix[(hx, hy)][0]['disp'] = 1./new_depth
             new_node = (hx, hy, new_depth)
-            mesh = refresh_node(single_edge_node, mesh.node[single_edge_node], new_node, dict(), mesh)
+            mesh = refresh_node(single_edge_node, mesh.nodes[single_edge_node], new_node, dict(), mesh)
             edge_ccs[edge_cc_id] = set([new_node])
             for ne in largest_cc:
                 mesh.add_edge(new_node, ne)
@@ -960,10 +960,10 @@ def context_and_holes(mesh, edge_ccs, config, specific_edge_id, specific_edge_lo
     mask_ccs = copy.deepcopy(edge_ccs)
     forbidden_len = 3
     forbidden_map = np.ones((mesh.graph['H'] - forbidden_len, mesh.graph['W'] - forbidden_len))
-    forbidden_map = np.pad(forbidden_map, ((forbidden_len, forbidden_len), (forbidden_len, forbidden_len)), mode='constant').astype(np.bool)
-    cur_tmp_mask_map = np.zeros_like(forbidden_map).astype(np.bool)
-    passive_background = 10 if 10 is not None else background_thickness
-    passive_context = 1 if 1 is not None else context_thickness
+    forbidden_map = np.pad(forbidden_map, ((forbidden_len, forbidden_len), (forbidden_len, forbidden_len)), mode='constant').astype(bool)
+    cur_tmp_mask_map = np.zeros_like(forbidden_map).astype(bool)
+    passive_background = 10 if 10 != None else background_thickness
+    passive_context = 1 if 1 != None else context_thickness
 
     for edge_id, edge_cc in enumerate(edge_ccs):
         cur_mask_cc = None; cur_mask_cc = []
@@ -980,7 +980,7 @@ def context_and_holes(mesh, edge_ccs, config, specific_edge_id, specific_edge_lo
                 tmp_mask_nodes = copy.deepcopy(mask_ccs[edge_id])
                 tmp_intersect_nodes = []
                 tmp_intersect_context_nodes = []
-                mask_map = np.zeros((mesh.graph['H'], mesh.graph['W']), dtype=np.bool)
+                mask_map = np.zeros((mesh.graph['H'], mesh.graph['W']), dtype=bool)
                 context_depth = np.zeros((mesh.graph['H'], mesh.graph['W']))
                 comp_cnt_depth = np.zeros((mesh.graph['H'], mesh.graph['W']))
                 connect_map = np.zeros((mesh.graph['H'], mesh.graph['W']))
@@ -1007,7 +1007,7 @@ def context_and_holes(mesh, edge_ccs, config, specific_edge_id, specific_edge_lo
                                 connect_map[xx[0], xx[1]] = xx[2]
                 tmp_context_nodes = [*context_ccs[edge_id]]
                 tmp_erode.append([*context_ccs[edge_id]])
-                context_map = np.zeros((mesh.graph['H'], mesh.graph['W']), dtype=np.bool)
+                context_map = np.zeros((mesh.graph['H'], mesh.graph['W']), dtype=bool)
                 if (context_map.astype(np.uint8) * mask_map.astype(np.uint8)).max() > 0:
                     import pdb; pdb.set_trace()
                 for node in tmp_context_nodes:
@@ -1017,14 +1017,14 @@ def context_and_holes(mesh, edge_ccs, config, specific_edge_id, specific_edge_lo
                 if (context_map.astype(np.uint8) * mask_map.astype(np.uint8)).max() > 0:
                     import pdb; pdb.set_trace()
                 tmp_intouched_nodes = [*intouched_ccs[edge_id]]
-                intouched_map = np.zeros((mesh.graph['H'], mesh.graph['W']), dtype=np.bool)
+                intouched_map = np.zeros((mesh.graph['H'], mesh.graph['W']), dtype=bool)
                 for node in tmp_intouched_nodes: intouched_map[node[0], node[1]] = True
                 intouched_map[mask_map == True] = False
                 tmp_redundant_nodes = set()
                 tmp_noncont_nodes = set()
-                noncont_map = np.zeros((mesh.graph['H'], mesh.graph['W']), dtype=np.bool)
-                intersect_map = np.zeros((mesh.graph['H'], mesh.graph['W']), dtype=np.bool)
-                intersect_context_map = np.zeros((mesh.graph['H'], mesh.graph['W']), dtype=np.bool)
+                noncont_map = np.zeros((mesh.graph['H'], mesh.graph['W']), dtype=bool)
+                intersect_map = np.zeros((mesh.graph['H'], mesh.graph['W']), dtype=bool)
+                intersect_context_map = np.zeros((mesh.graph['H'], mesh.graph['W']), dtype=bool)
             if i > passive_background and inpaint_iter == 0:
                 new_tmp_intersect_nodes = None
                 new_tmp_intersect_nodes = []
@@ -1303,9 +1303,9 @@ def context_and_holes(mesh, edge_ccs, config, specific_edge_id, specific_edge_lo
                     tmp_context_nodes = copy.deepcopy(ecnt_cc)
                     tmp_invalid_context_nodes = copy.deepcopy(invalid_extend_edge_ccs[ecnt_id])
                     tmp_mask_nodes = copy.deepcopy(accomp_extend_context_ccs[ecnt_id])
-                    tmp_context_map = np.zeros((mesh.graph['H'], mesh.graph['W'])).astype(np.bool)
-                    tmp_mask_map = np.zeros((mesh.graph['H'], mesh.graph['W'])).astype(np.bool)
-                    tmp_invalid_context_map = np.zeros((mesh.graph['H'], mesh.graph['W'])).astype(np.bool)
+                    tmp_context_map = np.zeros((mesh.graph['H'], mesh.graph['W'])).astype(bool)
+                    tmp_mask_map = np.zeros((mesh.graph['H'], mesh.graph['W'])).astype(bool)
+                    tmp_invalid_context_map = np.zeros((mesh.graph['H'], mesh.graph['W'])).astype(bool)
                     for node in tmp_mask_nodes:
                         tmp_mask_map[node[0], node[1]] = True
                     for node in context_ccs[ecnt_id]:
@@ -2239,6 +2239,7 @@ def output_3d_photo(verts, colors, faces, Height, Width, hFov, vFov, tgt_poses, 
             normal_canvas.rotate(axis=axis, angle=(angle*180)/np.pi)
             normal_canvas.translate(rel_pose[:3,3])
             new_mean_loc_depth = mean_loc_depth - float(rel_pose[2, 3])
+            print("0")
             if 'dolly' in video_traj_type:
                 new_fov = float((np.arctan2(plane_width, np.array([np.abs(new_mean_loc_depth)])) * 180. / np.pi) * 2)
                 normal_canvas.reinit_camera(new_fov)
@@ -2250,6 +2251,7 @@ def output_3d_photo(verts, colors, faces, Height, Width, hFov, vFov, tgt_poses, 
             img = cv2.resize(img, (int(img.shape[1] / init_factor), int(img.shape[0] / init_factor)), interpolation=cv2.INTER_AREA)
             img = img[anchor[0]:anchor[1], anchor[2]:anchor[3]]
             img = img[int(border[0]):int(border[1]), int(border[2]):int(border[3])]
+            print("1")
 
             if any(np.array(config['crop_border']) > 0.0):
                 H_c, W_c, _ = img.shape
@@ -2259,6 +2261,7 @@ def output_3d_photo(verts, colors, faces, Height, Width, hFov, vFov, tgt_poses, 
                 o_r = int(W_c * config['crop_border'][3])
                 img = img[o_t:H_c-o_b, o_l:W_c-o_r]
                 img = cv2.resize(img, (W_c, H_c), interpolation=cv2.INTER_CUBIC)
+            print("2")
 
             """
             img = cv2.resize(img, (int(img.shape[1] / init_factor), int(img.shape[0] / init_factor)), interpolation=cv2.INTER_CUBIC)
@@ -2273,6 +2276,7 @@ def output_3d_photo(verts, colors, faces, Height, Width, hFov, vFov, tgt_poses, 
             normal_canvas.translate(-rel_pose[:3,3])
             normal_canvas.rotate(axis=axis, angle=-(angle*180)/np.pi)
             normal_canvas.view_changed()
+            print("Finish", video_pose)
         """
         if config['crop_border'] is True:
             atop, abuttom = min(max(tops), img.shape[0]//2 - 10), max(min(buttoms), img.shape[0]//2 + 10)
@@ -2290,7 +2294,7 @@ def output_3d_photo(verts, colors, faces, Height, Width, hFov, vFov, tgt_poses, 
         if isinstance(video_basename, list):
             video_basename = video_basename[0]
         clip.write_videofile(os.path.join(output_dir, video_basename + '_' + video_traj_type + '.mp4'), fps=config['fps'])
-
+        print("finished one")
 
 
     return normal_canvas, all_canvas
