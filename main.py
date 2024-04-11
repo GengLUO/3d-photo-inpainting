@@ -50,7 +50,9 @@ for idx in tqdm(range(len(sample_list))):
     image = imageio.imread(sample['ref_img_fi'])
 #Depth Map Extraction and Processing
     print(f"Running depth extraction at {time.time()}")
-    if config['use_boostmonodepth'] is True:
+    if config['use_depth_anything'] is True:
+        run_depth_anything(sample['ref_img_fi'], config['src_folder'], config['depth_folder'])
+    elif config['use_boostmonodepth'] is True:
         run_boostmonodepth(sample['ref_img_fi'], config['src_folder'], config['depth_folder'])
     elif config['require_midas'] is True:
         run_depth([sample['ref_img_fi']], config['src_folder'], config['depth_folder'],
