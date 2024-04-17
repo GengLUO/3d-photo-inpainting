@@ -26,12 +26,14 @@ import time
 from scipy.interpolate import interp1d
 from collections import namedtuple
 
+#compute the coordinates (x, y, z) for a series of points along a specific path in 3D space.
 def path_planning(num_frames, x, y, z, path_type=''):
     if path_type == 'straight-line':
-        corner_points = np.array([[0, 0, 0], [(0 + x) * 0.5, (0 + y) * 0.5, (0 + z) * 0.5], [x, y, z]])
+        corner_points = np.array([[0, 0, 0], [(0 + x) * 0.5, (0 + y) * 0.5, (0 + z) * 0.5], [x, y, z]])#3 points(start, mid, end)
         corner_t = np.linspace(0, 1, len(corner_points))
         t = np.linspace(0, 1, num_frames)
         cs = interp1d(corner_t, corner_points, axis=0, kind='quadratic')
+        #A spline is a mathematical function used for creating smooth and flexible curves or surfaces through a given set of points.
         spline = cs(t)
         xs, ys, zs = [xx.squeeze() for xx in np.split(spline, 3, 1)]
     elif path_type == 'double-straight-line':
@@ -836,8 +838,10 @@ def clean_far_edge(mask_edge, mask_edge_with_id, context_edge, mask, info_on_pix
     return far_edge, uncleaned_far_edge, far_edge_with_id, near_edge_with_id
 
 def get_MiDaS_samples(image_folder, depth_folder, config, specific=None, aft_certain=None):
-    lines = [os.path.splitext(os.path.basename(xx))[0] for xx in glob.glob(os.path.join(image_folder, '*' + config['img_format']))]
+    #retrieve all images
+    lines = [os.path.splitext(os.path.basename(xx))[0] for xx in glob.glob(os.path.join(image_folder, '*' + config['img_format']))] 
     samples = []
+    #A 4x4 identity matrix, which represents a generic, default camera pose (often used in computer vision to represent a camera's position and orientation in a 3D space).
     generic_pose = np.eye(4)
     assert len(config['traj_types']) == len(config['x_shift_range']) ==\
            len(config['y_shift_range']) == len(config['z_shift_range']) == len(config['video_postfix']), \
@@ -872,7 +876,7 @@ def get_MiDaS_samples(image_folder, depth_folder, config, specific=None, aft_cer
         sdict['depth_fi'] = os.path.join(depth_folder, seq_dir + config['depth_format'])
         sdict['ref_img_fi'] = os.path.join(image_folder, seq_dir + config['img_format'])
         H, W = imageio.imread(sdict['ref_img_fi']).shape[:2]
-        sdict['int_mtx'] = np.array([[max(H, W), 0, W//2], [0, max(H, W), H//2], [0, 0, 1]]).astype(np.float32)
+        sdict['int_mtx'] = np.array([[max(H, W), 0, W//2], [0, max(H, W), H//2], [0, 0, 1]]).astype(np.float32)#Reads the reference image to obtain its dimensions and calculates the intrinsic camera matrix based on these dimensions.
         if sdict['int_mtx'].max() > 1:
             sdict['int_mtx'][0, :] = sdict['int_mtx'][0, :] / float(W)
             sdict['int_mtx'][1, :] = sdict['int_mtx'][1, :] / float(H)
@@ -944,11 +948,20 @@ def read_MiDaS_depth(disp_fi, disp_rescale=10., h=None, w=None):
         disp = np.load(disp_fi)
     else:
         disp = imageio.imread(disp_fi).astype(np.float32)
+    #Normalize the Disparity Map
     disp = disp - disp.min()
+    # performs a normalization of the disparity values (by dividing by the maximum value), 
+    # blurs the result using a 3x3 kernel to smooth out noise or artifacts, and then rescales it back up to the original maximum value. 
+    # This step is crucial for reducing noise and enhancing the quality of the depth estimation.
     disp = cv2.blur(disp / disp.max(), ksize=(3, 3)) * disp.max()
+    #Now disparity is from 0 to 1
+    # normalizes the disparity again and then scales it by a factor
     disp = (disp / disp.max()) * disp_rescale
     if h is not None and w is not None:
+        #order=1 specifies bilinear interpolation during resizing, which is a good choice for continuous data. 
+        #Resizing is done after another normalization, and then the values are scaled back up to the maximum value to maintain the range.
         disp = resize(disp / disp.max(), (h, w), order=1) * disp.max()
+    #Convert Disparity to Depth, also caps the minimum disparity value to prevent overly large depth values, which correspond to very distant objects.
     depth = 1. / np.maximum(disp, 0.05)
 
     return depth

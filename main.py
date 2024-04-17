@@ -50,30 +50,43 @@ for idx in tqdm(range(len(sample_list))):
     image = imageio.imread(sample['ref_img_fi'])
 #Depth Map Extraction and Processing
     print(f"Running depth extraction at {time.time()}")
-    if config['use_depth_anything'] is True:
-        run_depth_anything(sample['ref_img_fi'], config['src_folder'], config['depth_folder'])
-    elif config['use_boostmonodepth'] is True:
+    if config['use_boostmonodepth'] is True:
         run_boostmonodepth(sample['ref_img_fi'], config['src_folder'], config['depth_folder'])
     elif config['require_midas'] is True:
         run_depth([sample['ref_img_fi']], config['src_folder'], config['depth_folder'],
                   config['MiDaS_model_ckpt'], MonoDepthNet, MiDaS_utils, target_w=640)
 #Image and Depth Resizing
+    #Determine the Shape of the Depth File
     if 'npy' in config['depth_format']:
         config['output_h'], config['output_w'] = np.load(sample['depth_fi']).shape[:2]
     else:
         config['output_h'], config['output_w'] = imageio.imread(sample['depth_fi']).shape[:2]
+    #Resize Dimensions
     frac = config['longer_side_len'] / max(config['output_h'], config['output_w'])
     config['output_h'], config['output_w'] = int(config['output_h'] * frac), int(config['output_w'] * frac)
     config['original_h'], config['original_w'] = config['output_h'], config['output_w']
-    if image.ndim == 2:
+
+    #checks if the image has two dimensions (indicating it's a grayscale image with no color channels
+    if image.ndim == 2: 
+        # adds a channel dimension to the image and repeats the grayscale values across three channels, converting it to a three-channel grayscale image (simulating an RGB image).
+        #image[..., None] takes the original image array and adds a new axis, using None (or np.newaxis which behaves the same). The ellipsis (...) is used to include all existing axes of the image, and None adds an additional axis at the end.
+        #For a 2D grayscale image of shape (height, width), after this operation, the shape becomes (height, width, 1). The image still holds grayscale values, but now these values are wrapped in an extra dimension, preparing it for the next step.
+
+        #.repeat(3, -1) then takes this modified image and repeats it along the last axis (indicated by -1). The number 3 specifies how many times each value should be repeated along this axis.
+        #This effectively copies the grayscale values across three slices on the new axis, converting the image shape from (height, width, 1) to (height, width, 3).
         image = image[..., None].repeat(3, -1)
+    #Determine If Image is Grayscale
     if np.sum(np.abs(image[..., 0] - image[..., 1])) == 0 and np.sum(np.abs(image[..., 1] - image[..., 2])) == 0:
         config['gray_image'] = True
     else:
         config['gray_image'] = False
+    # resizes the image to the new dimensions using area interpolation
     image = cv2.resize(image, (config['output_w'], config['output_h']), interpolation=cv2.INTER_AREA)
+    # transform disparity to depth
     depth = read_MiDaS_depth(sample['depth_fi'], 3.0, config['output_h'], config['output_w'])
+    #Extract Central Depth Value. "//:floor division"
     mean_loc_depth = depth[depth.shape[0]//2, depth.shape[1]//2]
+    
 #Depth Filtering and 3D Model Preparation
     if not(config['load_ply'] is True and os.path.exists(mesh_fi)):
         vis_photos, vis_depths = sparse_bilateral_filtering(depth.copy(), image.copy(), config, num_iter=config['sparse_iter'], spdb=False)
@@ -97,6 +110,7 @@ for idx in tqdm(range(len(sample_list))):
         depth_feat_model = depth_feat_model.to(device)
         depth_feat_model.eval()
         depth_feat_model = depth_feat_model.to(device)
+
         print(f"Loading rgb model at {time.time()}")
         rgb_model = Inpaint_Color_Net()
         rgb_feat_weight = torch.load(config['rgb_feat_model_ckpt'],
@@ -125,7 +139,7 @@ for idx in tqdm(range(len(sample_list))):
         depth_edge_model = None
         depth_feat_model = None
         torch.cuda.empty_cache()
-#Optional Video Generation
+#Video Generation
     if config['save_ply'] is True or config['load_ply'] is True:
         verts, colors, faces, Height, Width, hFov, vFov = read_ply(mesh_fi)
     else:
