@@ -49,12 +49,12 @@ for idx in tqdm(range(len(sample_list))):
     mesh_fi = os.path.join(config['mesh_folder'], sample['src_pair_name'] +'.ply')
     image = imageio.imread(sample['ref_img_fi'])
 #Depth Map Extraction and Processing
-    print(f"Running depth extraction at {time.time()}")
-    if config['use_boostmonodepth'] is True:
-        run_boostmonodepth(sample['ref_img_fi'], config['src_folder'], config['depth_folder'])
-    elif config['require_midas'] is True:
-        run_depth([sample['ref_img_fi']], config['src_folder'], config['depth_folder'],
-                  config['MiDaS_model_ckpt'], MonoDepthNet, MiDaS_utils, target_w=640)
+    # print(f"Running depth extraction at {time.time()}")
+    # if config['use_boostmonodepth'] is True:
+    #     run_boostmonodepth(sample['ref_img_fi'], config['src_folder'], config['depth_folder'])
+    # elif config['require_midas'] is True:
+    #     run_depth([sample['ref_img_fi']], config['src_folder'], config['depth_folder'],
+    #               config['MiDaS_model_ckpt'], MonoDepthNet, MiDaS_utils, target_w=640)
 #Image and Depth Resizing
     #Determine the Shape of the Depth File
     if 'npy' in config['depth_format']:
