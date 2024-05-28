@@ -29,3 +29,7 @@ wget https://sfu.ca/~yagiz/CVPR21/latest_net_G.pth
 mv latest_net_G.pth BoostingMonocularDepth/pix2pix/checkpoints/mergemodel/
 wget https://github.com/intel-isl/MiDaS/releases/download/v2/model-f46da743.pt
 mv model-f46da743.pt BoostingMonocularDepth/midas/model.pt
+
+
+echo "cloning from Depth Anything"
+git clone https://github.com/GengLUO/Depth-Anything.git

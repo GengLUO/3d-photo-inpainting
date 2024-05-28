@@ -11,3 +11,10 @@ moviepy==1.0.2
 transforms3d
 networkx
 scikit-image
+# For Depth Anything
+gradio_imageslider
+gradio==4.14.0
+torch
+torchvision
+opencv-python
+huggingface_hub
