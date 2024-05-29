@@ -3,6 +3,7 @@ import cv2
 import glob
 import numpy as np
 import imageio
+import shutil
 
 DEPTH_ANYTHING_BASE = 'Depth-Anything'
 
@@ -14,9 +15,16 @@ def run_depth_anything(img_names, src_folder, depth_folder):
     if not isinstance(img_names, list):
         img_names = [img_names]
 
-    # remove irrelevant files first
-    clean_folder(os.path.join(DEPTH_ANYTHING_BASE, DEPTH_ANYTHING_INPUTS))
-    clean_folder(os.path.join(DEPTH_ANYTHING_BASE, DEPTH_ANYTHING_OUTPUTS))
+    # Ensure base, input, and output directories exist
+    input_path = os.path.join(DEPTH_ANYTHING_BASE, DEPTH_ANYTHING_INPUTS)
+    output_path = os.path.join(DEPTH_ANYTHING_BASE, DEPTH_ANYTHING_OUTPUTS)
+
+    os.makedirs(input_path, exist_ok=True)
+    os.makedirs(output_path, exist_ok=True)
+
+    # Clean the folders to remove irrelevant files
+    clean_folder(input_path)
+    clean_folder(output_path)
 
     tgt_names = []
     for img_name in img_names:
@@ -30,6 +38,12 @@ def run_depth_anything(img_names, src_folder, depth_folder):
 
     # os.system(f'cd {DEPTH_ANYTHING_BASE} && python run.py --Final --data_dir {DEPTH_ANYTHING_INPUTS}/  --output_dir {DEPTH_ANYTHING_OUTPUTS} --depthNet 0')
     os.system(f'cd {DEPTH_ANYTHING_BASE} && python run.py --encoder vits --img-path {DEPTH_ANYTHING_INPUTS}/ --outdir {DEPTH_ANYTHING_OUTPUTS} --pred-only --grayscale')
+
+    # Copy the results from the outputs folder to the depth_folder
+    for file_name in os.listdir(output_path):
+        src_file = os.path.join(output_path, file_name)
+        dst_file = os.path.join(depth_folder, file_name)
+        shutil.copy(src_file, dst_file)
 
 def clean_folder(folder, img_exts=['.png', '.jpg', '.npy']):
 
