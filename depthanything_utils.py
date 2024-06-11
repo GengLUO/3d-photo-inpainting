@@ -23,8 +23,8 @@ def run_depth_anything(img_name, src_folder, depth_folder):
     command = [
         'python', 'run.py',
         '--encoder', 'vits',
-        '--img-path', str(input_path) + '/',
-        '--outdir', str(output_path),
+        '--img-path', DEPTH_ANYTHING_INPUTS + '/',
+        '--outdir', DEPTH_ANYTHING_OUTPUTS,
         '--pred-only', '--grayscale'
     ]
 
