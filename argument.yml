@@ -14,10 +14,10 @@ traj_types: ['circle', 'circle']
 video_postfix: ['circle', 'swing']
 specific: ''
 longer_side_len: 960
-src_folder: image
-depth_folder: depth
-mesh_folder: mesh
-video_folder: video
+src_folder: data/image
+depth_folder: data/depth
+mesh_folder: data/mesh
+video_folder: data/video
 load_ply: False
 save_ply: True
 inference_video: True
